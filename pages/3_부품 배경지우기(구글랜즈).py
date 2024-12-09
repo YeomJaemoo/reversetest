@@ -30,7 +30,7 @@ def generate_google_lens_url(image_url):
     """
     Generates a Google Lens URL for the given image URL.
     """
-    base_lens_url = "https://lens.google.com/search?ep=gsbubu&hl=ko&re=df&p="
+    base_lens_url = "https://www.google.com/searchbyimage?image_url="
     return f"{base_lens_url}{image_url}"
 
 # 앱 초기화
