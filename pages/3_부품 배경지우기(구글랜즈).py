@@ -3,71 +3,71 @@ from rembg import remove
 from PIL import Image
 from io import BytesIO
 
-st.set_page_config(layout="wide", page_title="이미지 배경 제거 및 Google Lens 검색", page_icon="😶‍🌫️")
+st.set_page_config(layout="wide", page_title="이미지 배경 제거 및 Google Lens 검색", page_icon="🔍")
 
-st.write("## 🐧 배경을 제거하고 Google Lens로 검색하기")
-st.sidebar.write("## 업로드와 다운로드 :gear:")
+st.write("## 🐧 배경 제거 및 Google Lens 검색")
+st.sidebar.write("## 업로드 및 다운로드")
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
+def convert_image(img):
+    """
+    Converts a PIL image to bytes.
+    """
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
 def fix_image(image_bytes):
     """
-    원본 이미지를 읽어 배경을 제거합니다.
+    Removes the background from the image.
     """
-    if isinstance(image_bytes, BytesIO):
-        image = Image.open(image_bytes)
-    else:
-        image = Image.open(BytesIO(image_bytes))
+    image = Image.open(BytesIO(image_bytes))
     fixed = remove(image)
     return image, fixed
 
-def create_google_lens_url(image_url):
+def generate_google_lens_url(image_url):
     """
-    Google Lens 검색 URL 생성
+    Generates a Google Lens URL for the given image URL.
     """
     base_lens_url = "https://lens.google.com/search?ep=gsbubu&hl=ko&re=df&p="
     return f"{base_lens_url}{image_url}"
 
+# 앱 초기화
+if "processed_images" not in st.session_state:
+    st.session_state.processed_images = []
+
 def main():
-    st.title("🤩 Google Lens with Streamlit")
+    st.title("🔍 Google Lens with Streamlit")
 
-    # 이미지 업로드 또는 카메라 입력
-    img_file_buffer = st.camera_input("📸 사진찍기")
-    uploaded_images = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
-
-    if img_file_buffer is not None:
-        # 카메라로 찍은 이미지를 읽어오기
-        image_bytes = img_file_buffer.getvalue()
+    # 이미지 업로드
+    uploaded_file = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"])
+    
+    if uploaded_file:
+        image_bytes = uploaded_file.read()
         if len(image_bytes) > MAX_FILE_SIZE:
-            st.error("사진파일이 너무 큽니다. 5MB 이하를 업로드하세요.")
+            st.error("파일 크기가 너무 큽니다. 5MB 이하의 파일을 업로드해주세요.")
         else:
             original_image, fixed_image = fix_image(image_bytes)
-            st.image(original_image, caption="Original Image :camera:", use_container_width=True)
-            st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
-    if uploaded_images is not None:
-        # 업로드한 이미지를 읽어오기
-        for upload in uploaded_images:
-            image_bytes = upload.read()
-            if len(image_bytes) > MAX_FILE_SIZE:
-                st.error("사진파일이 너무 큽니다. 5MB 이하를 업로드하세요.")
-            else:
-                original_image, fixed_image = fix_image(image_bytes)
-                st.image(original_image, caption="Original Image :camera:", use_container_width=True)
-                st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
+            # 원본 이미지 및 배경 제거된 이미지 표시
+            st.write("### 처리된 이미지")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.image(original_image, caption="원본 이미지", use_column_width=True)
+            with col2:
+                st.image(fixed_image, caption="배경 제거 이미지", use_column_width=True)
 
-    # 사용자 입력 필드: 이미지 URL 붙여넣기
-    st.write("🔗 **배경 제거된 이미지의 URL을 복사하여 붙여넣으세요.**")
-    copied_url = st.text_input("이미지 URL 붙여넣기", placeholder="https://reversetest.streamlit.app/~/+/media/...")
-
-    # Google Lens 검색 버튼
-    if copied_url:
-        if copied_url.startswith("http://") or copied_url.startswith("https://"):
-            google_lens_url = create_google_lens_url(copied_url)
-            st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
-            st.success("Google Lens 링크가 생성되었습니다. 위 링크를 클릭하세요.")
-        else:
-            st.error("유효한 URL을 입력하세요. URL은 'http://' 또는 'https://'로 시작해야 합니다.")
+            # Google Lens URL 생성
+            st.write("### Google Lens 검색")
+            st.write("이미지를 업로드한 후 Google Lens 검색 링크를 제공합니다.")
+            image_url_placeholder = st.text_input("이미지 URL을 입력하세요", placeholder="https://example.com/your-image-url.png")
+            if st.button("Google Lens 검색 링크 생성"):
+                if image_url_placeholder.startswith("http"):
+                    lens_url = generate_google_lens_url(image_url_placeholder)
+                    st.markdown(f"[🔗 Google Lens에서 검색하기]({lens_url})", unsafe_allow_html=True)
+                else:
+                    st.error("올바른 이미지 URL을 입력하세요.")
 
 if __name__ == "__main__":
     main()
