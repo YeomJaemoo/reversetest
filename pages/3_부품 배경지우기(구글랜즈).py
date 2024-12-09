@@ -28,8 +28,6 @@ def create_google_lens_url(image_url):
 # 초기화: 세션 상태에서 필요한 키 설정
 if "processed_images" not in st.session_state:
     st.session_state.processed_images = []
-if "google_lens_urls" not in st.session_state:
-    st.session_state.google_lens_urls = []
 if "last_processed" not in st.session_state:
     st.session_state.last_processed = 0
 
@@ -41,7 +39,6 @@ def main():
     uploaded_images = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
     new_images = []
-    new_google_lens_urls = []
 
     if img_file_buffer is not None:
         # 카메라로 찍은 이미지를 읽어오기
@@ -72,11 +69,9 @@ def main():
             if hasattr(fixed_image_display, "url"):
                 fixed_image_url = fixed_image_display.url
                 google_lens_url = create_google_lens_url(fixed_image_url)
-                new_google_lens_urls.append((original_image, fixed_image, google_lens_url))
+                st.session_state.processed_images.append((original_image, fixed_image, google_lens_url))
 
-        # 처리된 이미지를 세션 상태에 추가
-        st.session_state.processed_images.extend(new_google_lens_urls)
-        st.session_state.last_processed = len(uploaded_images)
+        st.session_state.last_processed += len(new_images)
 
     for i, (original_image, fixed_image, google_lens_url) in enumerate(st.session_state.processed_images):
         st.write(f"### 이미지 #{i+1}")
@@ -88,20 +83,12 @@ def main():
 
         # Google Lens 링크를 이미지 아래 표시
         st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
-
-        st.sidebar.download_button(f"배경제거된 이미지 #{i+1}", convert_image(fixed_image), f"fixed_{i+1}.png", "image/png", key=f"download_button_{i}")
     
     # 초기화 버튼
     if st.sidebar.button('초기화'):
         st.session_state.processed_images = []
         st.session_state.last_processed = 0
         st.rerun()
-
-def convert_image(img):
-    buf = BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf.getvalue()
 
 if __name__ == "__main__":
     main()
