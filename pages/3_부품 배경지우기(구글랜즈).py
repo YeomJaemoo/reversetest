@@ -3,7 +3,7 @@ from rembg import remove
 from PIL import Image
 from io import BytesIO
 
-st.set_page_config(layout="wide", page_title="이미지 배경 제거", page_icon="😶‍🌫️")
+st.set_page_config(layout="wide", page_title="이미지 배경 제거 및 Google Lens 검색", page_icon="😶‍🌫️")
 
 st.write("## 🐧 배경을 제거하고 Google Lens로 검색하기")
 st.sidebar.write("## 업로드와 다운로드 :gear:")
@@ -30,7 +30,7 @@ def create_google_lens_url(image_url):
 
 def main():
     st.title("🤩 Google Lens with Streamlit")
-    
+
     # 이미지 업로드 또는 카메라 입력
     img_file_buffer = st.camera_input("📸 사진찍기")
     uploaded_images = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
@@ -57,14 +57,17 @@ def main():
                 st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
     # 사용자 입력 필드: 이미지 URL 붙여넣기
-    st.write("🔗 **이미지 주소를 복사하여 붙여넣으세요.**")
-    copied_url = st.text_input("이미지 링크 붙여넣기", placeholder="https://reversetest.streamlit.app/~/+/media/...")
+    st.write("🔗 **배경 제거된 이미지의 URL을 복사하여 붙여넣으세요.**")
+    copied_url = st.text_input("이미지 URL 붙여넣기", placeholder="https://reversetest.streamlit.app/~/+/media/...")
 
     # Google Lens 검색 버튼
     if copied_url:
-        google_lens_url = create_google_lens_url(copied_url)
-        st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
-        st.success("Google Lens 링크가 생성되었습니다. 위 링크를 클릭하세요.")
+        if copied_url.startswith("http://") or copied_url.startswith("https://"):
+            google_lens_url = create_google_lens_url(copied_url)
+            st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
+            st.success("Google Lens 링크가 생성되었습니다. 위 링크를 클릭하세요.")
+        else:
+            st.error("유효한 URL을 입력하세요. URL은 'http://' 또는 'https://'로 시작해야 합니다.")
 
 if __name__ == "__main__":
     main()
