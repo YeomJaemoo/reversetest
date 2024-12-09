@@ -65,7 +65,7 @@ def main():
     if st.sidebar.button("배경제거 하기 버튼"):
         for original_image, fixed_image in new_images:
             # 배경 제거된 이미지를 화면에 표시하여 URL 생성
-            fixed_image_display = st.image(fixed_image, use_column_width=True)
+            fixed_image_display = st.image(fixed_image, use_container_width=True)
             if hasattr(fixed_image_display, "url"):
                 fixed_image_url = fixed_image_display.url
                 google_lens_url = create_google_lens_url(fixed_image_url)
@@ -77,9 +77,9 @@ def main():
         st.write(f"### 이미지 #{i+1}")
         col1, col2 = st.columns(2)
         with col1:
-            st.image(original_image, caption="Original Image :camera:", use_column_width=True)
+            st.image(original_image, caption="Original Image :camera:", use_container_width=True)
         with col2:
-            st.image(fixed_image, caption="Fixed Image :wrench:", use_column_width=True)
+            st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
         # Google Lens 링크를 이미지 아래 표시
         st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
