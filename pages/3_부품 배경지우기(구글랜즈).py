@@ -25,7 +25,7 @@ def create_google_lens_url(image_url):
     """
     Google Lens 검색 URL 생성
     """
-    base_lens_url = "https://lens.google.com/uploadbyurl?url="
+    base_lens_url = "https://lens.google.com/search?p="
     return f"{base_lens_url}{image_url}"
 
 def main():
@@ -45,8 +45,7 @@ def main():
             st.image(original_image, caption="Original Image :camera:", use_container_width=True)
             image_widget = st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
-            # 사용자가 URL 복사 후 붙여넣기
-            st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 버튼을 누르세요.**")
+            st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 입력창을 사용하세요.**")
             copied_url = st.text_input("배경 제거된 이미지 URL을 붙여넣으세요:")
             if copied_url:
                 google_lens_url = create_google_lens_url(copied_url)
@@ -63,8 +62,7 @@ def main():
                 st.image(original_image, caption="Original Image :camera:", use_container_width=True)
                 image_widget = st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
-                # 사용자가 URL 복사 후 붙여넣기
-                st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 버튼을 누르세요.**")
+                st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 입력창을 사용하세요.**")
                 copied_url = st.text_input("배경 제거된 이미지 URL을 붙여넣으세요:", key=f"url_input_{id(upload)}")
                 if copied_url:
                     google_lens_url = create_google_lens_url(copied_url)
