@@ -25,7 +25,7 @@ def create_google_lens_url(image_url):
     """
     Google Lens 검색 URL 생성
     """
-    base_lens_url = "https://lens.google.com/search?p="
+    base_lens_url = "https://lens.google.com/search?ep=gsbubu&hl=ko&re=df&p="
     return f"{base_lens_url}{image_url}"
 
 def main():
