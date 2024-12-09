@@ -31,7 +31,7 @@ def create_google_lens_url(image_url):
 def main():
     st.title("🤩 Google Lens with Streamlit")
     
-    # 카메라로 이미지를 입력받거나 파일을 업로드하기
+    # 이미지 업로드 또는 카메라 입력
     img_file_buffer = st.camera_input("📸 사진찍기")
     uploaded_images = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
@@ -43,13 +43,7 @@ def main():
         else:
             original_image, fixed_image = fix_image(image_bytes)
             st.image(original_image, caption="Original Image :camera:", use_container_width=True)
-            image_widget = st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
-
-            st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 입력창을 사용하세요.**")
-            copied_url = st.text_input("배경 제거된 이미지 URL을 붙여넣으세요:")
-            if copied_url:
-                google_lens_url = create_google_lens_url(copied_url)
-                st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
+            st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
     if uploaded_images is not None:
         # 업로드한 이미지를 읽어오기
@@ -60,13 +54,17 @@ def main():
             else:
                 original_image, fixed_image = fix_image(image_bytes)
                 st.image(original_image, caption="Original Image :camera:", use_container_width=True)
-                image_widget = st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
+                st.image(fixed_image, caption="Fixed Image :wrench:", use_container_width=True)
 
-                st.write("🔗 **배경 제거된 이미지 주소를 복사하여 Google Lens에서 검색하려면 아래 입력창을 사용하세요.**")
-                copied_url = st.text_input("배경 제거된 이미지 URL을 붙여넣으세요:", key=f"url_input_{id(upload)}")
-                if copied_url:
-                    google_lens_url = create_google_lens_url(copied_url)
-                    st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
+    # 사용자 입력 필드: 이미지 URL 붙여넣기
+    st.write("🔗 **이미지 주소를 복사하여 붙여넣으세요.**")
+    copied_url = st.text_input("이미지 링크 붙여넣기", placeholder="https://reversetest.streamlit.app/~/+/media/...")
+
+    # Google Lens 검색 버튼
+    if copied_url:
+        google_lens_url = create_google_lens_url(copied_url)
+        st.markdown(f"[🔍 Search with Google Lens]({google_lens_url})", unsafe_allow_html=True)
+        st.success("Google Lens 링크가 생성되었습니다. 위 링크를 클릭하세요.")
 
 if __name__ == "__main__":
     main()
