@@ -12,3 +12,4 @@ onnxruntime
 opencv-python-headless
 opencv-contrib-python-headless
 google-cloud-speech
+SpeechRecognition
