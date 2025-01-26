@@ -81,8 +81,9 @@ if 'audio_submitted' not in st.session_state:
     st.session_state['audio_submitted'] = False
 
 if st.button('기존 채팅 삭제'):
-    st.session_state['generated'].clear()
-    st.session_state['past'].clear()
+    st.session_state['generated'] = []
+    st.session_state['past'] = []
+    st.session_state['audio_submitted'] = False
 
 autocomplete = st.checkbox("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
@@ -101,13 +102,13 @@ if audio_input and not st.session_state['audio_submitted']:
     user_input = process_audio_input(audio_input)
     st.session_state['audio_submitted'] = True
 
-if user_input:
+if submitted or (audio_input and user_input):
     # 프롬프트 생성 후 챗봇의 답변 생성
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
 
     st.session_state['past'].append(user_input)
-    st.session_state["generated"].append(chatbot_response)
+    st.session_state['generated'].append(chatbot_response)
 
     # 음성 입력 완료 상태 초기화
     st.session_state['audio_submitted'] = False
@@ -115,7 +116,7 @@ if user_input:
 if st.session_state['generated']:
     for i in reversed(range(len(st.session_state['generated']))):
         message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
-        message(st.session_state["generated"][i], key=str(i))
+        message(st.session_state['generated'][i], key=str(i))
 
 # 대화 내용 저장 버튼
 if st.button('대화 내용 저장'):
