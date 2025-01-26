@@ -2,78 +2,87 @@ import streamlit as st
 from rembg import remove
 from PIL import Image
 from io import BytesIO
+import base64
 
-# Streamlit 페이지 설정
-st.set_page_config(layout="wide", page_title="이미지 배경 제거 및 Google Lens 검색", page_icon="🔍")
+st.set_page_config(layout="wide", page_title="이미지 배경 제거", page_icon="😶‍🌫️")
 
-st.write("## 🐧 배경 제거 및 Google Lens 검색")
-st.sidebar.write("## 업로드 및 다운로드")
+st.write("## 🐧배경을 제거하기")
+st.sidebar.write("## 업로드와 다운로드 :gear:")
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB 제한
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 def convert_image(img):
-    """
-    PIL 이미지를 바이트 데이터로 변환
-    """
     buf = BytesIO()
     img.save(buf, format="PNG")
-    return buf.getvalue()
+    byte_im = buf.getvalue()
+    return byte_im
 
 def fix_image(image_bytes):
-    """
-    rembg를 사용해 이미지 배경 제거
-    """
-    image = Image.open(BytesIO(image_bytes))
+    if isinstance(image_bytes, BytesIO):
+        image = Image.open(image_bytes)
+    else:
+        image = Image.open(BytesIO(image_bytes))
     fixed = remove(image)
-    return image, Image.open(BytesIO(fixed))
+    return image, fixed
 
-def generate_google_lens_url(image_url):
-    """
-    Google Lens URL 생성
-    """
-    base_lens_url = "https://www.google.com/searchbyimage?image_url="
-    return f"{base_lens_url}{image_url}"
-
-# 메인 함수
 def main():
-    st.title("🔍 Google Lens with Streamlit")
+    st.title("🤩Google Lens with Streamlit")
+    
+    # 카메라로 이미지를 입력받거나 파일을 업로드하기
+    img_file_buffer = st.camera_input("📸사진찍기")
+    uploaded_images = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
-    # 이미지 업로드
-    uploaded_file = st.sidebar.file_uploader("이미지 업로드", type=["png", "jpg", "jpeg"])
+    session_state = st.session_state
 
-    if uploaded_file:
-        image_bytes = uploaded_file.read()
-        if len(image_bytes) > MAX_FILE_SIZE:
-            st.error("파일 크기가 너무 큽니다. 5MB 이하의 파일을 업로드해주세요.")
-        else:
-            # 원본 이미지 표시
-            st.write("### 원본 이미지")
-            original_image = Image.open(BytesIO(image_bytes))
-            st.image(original_image, caption="업로드된 원본 이미지", use_column_width=True)
+    if "processed_images" not in session_state:
+        session_state.processed_images = []
+        session_state.last_processed = 0
 
-            # 배경 제거 버튼
-            if st.button("배경 제거"):
-                try:
+    # Process Images 버튼을 누르기 전에 미리 이미지를 처리하기
+    new_images = []
+
+    if img_file_buffer is not None:
+        # 카메라로 찍은 이미지를 읽어오기
+        image_bytes = img_file_buffer.getvalue()
+        if image_bytes is not None:
+            if len(image_bytes) > MAX_FILE_SIZE:
+                st.error("사진파일이 너무 큽니다. 5MB이하를 업로드하세요.")
+            else:
+                original_image, fixed_image = fix_image(image_bytes)
+                new_images.append((original_image, fixed_image))
+
+    if uploaded_images is not None:
+        # 업로드한 이미지를 읽어오기
+        for upload in uploaded_images[session_state.last_processed:]:
+            image_bytes = upload.read()
+
+            if image_bytes is not None:
+                if len(image_bytes) > MAX_FILE_SIZE:
+                    st.error("사진파일이 너무 큽니다. 5MB이하를 업로드하세요.")
+                else:
                     original_image, fixed_image = fix_image(image_bytes)
-                    st.write("### 배경 제거된 이미지")
-                    st.image(fixed_image, caption="배경 제거 완료", use_column_width=True)
+                    new_images.append((original_image, fixed_image))
 
-                    # Google Lens 검색 URL 생성
-                    st.write("### Google Lens 검색")
-                    st.write("처리된 이미지를 업로드한 URL을 입력하세요.")
-                    image_url_placeholder = st.text_input(
-                        "이미지 URL을 입력하세요",
-                        placeholder="https://example.com/your-image-url.png"
-                    )
+    if st.sidebar.button("배경제거 하기 버튼"):
+        # Process Images 버튼을 누르면 새롭게 처리한 이미지만 추가하기
+        session_state.processed_images.extend(new_images)
+        session_state.last_processed = len(uploaded_images)
 
-                    if st.button("Google Lens 검색 링크 생성"):
-                        if image_url_placeholder.startswith("http"):
-                            lens_url = generate_google_lens_url(image_url_placeholder)
-                            st.markdown(f"[🔗 Google Lens에서 검색하기]({lens_url})", unsafe_allow_html=True)
-                        else:
-                            st.error("올바른 이미지 URL을 입력하세요.")
-                except Exception as e:
-                    st.error(f"배경 제거 중 오류가 발생했습니다: {e}")
+    for i, (original_image, fixed_image) in enumerate(session_state.processed_images):
+        col1, col2 = st.columns(2)
+        col1.write("Original Image :camera:")
+        col1.image(original_image)
+        col2.write("Fixed Image :wrench:")
+        col2.image(fixed_image)
+        st.sidebar.markdown("")
+        st.sidebar.download_button(f"배경제거된 이미지 #{i+1}", convert_image(fixed_image), f"fixed_{i+1}.png", "image/png", key=f"download_button_{i}")
+    
+    # 초기화 버튼을 추가하여 상태를 리셋하는 기능 추가
+    if st.sidebar.button('초기화'):
+        # 처리된 이미지와 마지막 처리된 인덱스 초기화
+        session_state.processed_images = []
+        session_state.last_processed = 0
+        st.experimental_rerun()  # 상태가 변경되면 페이지를 새로고침
 
 if __name__ == "__main__":
     main()
