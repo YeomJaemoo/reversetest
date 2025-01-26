@@ -11,7 +11,7 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(
     page_title="3_an_electronic_component_helper",
-    page_icon="\ud83d\udd7f"
+    page_icon="🤖"
 )
 
 def create_prompt(
