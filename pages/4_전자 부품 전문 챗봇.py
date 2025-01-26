@@ -53,13 +53,11 @@ if 'past' not in st.session_state:
 if 'audio_questions' not in st.session_state:
     st.session_state['audio_questions'] = []
 
-# ---------------- 기존 채팅 삭제 버튼 ----------------
+# 채팅 삭제 시 모든 기록 초기화 (텍스트 + 음성질문 리스트)
 if st.button('기존 체팅 삭제'):
     st.session_state['generated'] = []
     st.session_state['past'] = []
     st.session_state['audio_questions'] = []
-    # 여기서 이후 코드 실행을 중단해버리면, 아직 남아있는 오디오 질문이 처리되지 않음
-    st.stop()
 
 # ---------------- 사이드바: 음성 녹음 UI ------------------
 with st.sidebar:
@@ -83,7 +81,7 @@ with st.sidebar:
                 st.warning("서버 문제로 음성을 인식할 수 없습니다.")
 
 
-# ---------------- 예시 프롬프트 사용 여부 ----------------
+# 예시 프롬프트 사용 여부
 autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
     "prompt": "핸드폰에서 메인보드가 하는 역할을 100자 내외로 말해줘!"
@@ -98,17 +96,21 @@ with st.form('form', clear_on_submit=True):
 
 # ---------------- 질문 처리 로직 ------------------
 
-# 1. 텍스트 질문이 있으면 우선 처리
+# 1. 텍스트 질문이 우선순위를 가짐
 if submitted and user_input:
+    # 텍스트 질문만 처리
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
     st.balloons()
 
+    # 채팅 세션 업데이트
     st.session_state['past'].append(user_input)
     st.session_state["generated"].append(chatbot_response)
 
-# 2. 텍스트 질문이 없을 때, 음성 질문 처리
+# 2. 텍스트 질문이 없을 경우에만 음성 질문 처리
 elif st.session_state['audio_questions']:
+    # 음성 녹음이 여러 번 들어왔다면, 순서대로 전부 처리
+    # 필요에 따라 한 개만 처리하고 싶으면 for문 대신 한 개만 pop해서 쓰면 됨
     for question in st.session_state['audio_questions']:
         prompt = create_prompt(question)
         chatbot_response = generate_response(prompt)
@@ -119,7 +121,8 @@ elif st.session_state['audio_questions']:
     # 처리 후 음성 질문 리스트 초기화
     st.session_state['audio_questions'].clear()
 
-# ---------------- 채팅 메시지 출력 (최신 순으로) ------------------
+
+# ---------------- 채팅 메시지 출력(과거순서 역순으로) ------------------
 if st.session_state['generated']:
     for i in reversed(range(len(st.session_state['generated']))):
         message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
