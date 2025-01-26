@@ -16,33 +16,17 @@ aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_50)
 # Load Object Detector
 detector = HomogeneousBgDetector()
 
-# Load Cap
-cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-
-if not cap.isOpened():
-    st.error("카메라를 열 수 없습니다. 카메라를 확인하고 다시 시도하세요.")
-    st.stop()
-
 st.title("📏Measure :red[Object Size]")
 st.image('images/Measurement Reference Image.png')
 st.write("## 위 이미지를 다운받아 5*5cm로 출력 후 측정할 물체 옆에 두세요!")
 
-# Create a placeholder for the image
-image_placeholder = st.empty()
+# Use Streamlit's camera_input for capturing images
+camera_input = st.camera_input("캡처하려면 카메라를 사용하세요")
 
-# Create a placeholder for the download link
-download_placeholder = st.empty()
-
-capture_button = st.button("캡쳐하기")
-
-# Streamlit loop
-while True:
-    ret, img = cap.read()
-    if not ret:
-        st.error("프레임을 읽을 수 없습니다. 카메라 연결을 확인하세요.")
-        break
+if camera_input is not None:
+    # Convert the image from Streamlit camera input to OpenCV format
+    file_bytes = np.asarray(bytearray(camera_input.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, 1)
 
     # Get Aruco marker
     corners, _, _ = cv2.aruco.detectMarkers(img, aruco_dict, parameters=parameters)
@@ -81,17 +65,15 @@ while True:
             cv2.putText(img, "Height {} cm".format(round(object_height, 1)), (int(x - 100), int(y + 15)),
                         cv2.FONT_HERSHEY_PLAIN, 2, (100, 200, 0), 2)
 
-    # Display the image
-    image_placeholder.image(img, channels="BGR", use_column_width=True)
+    # Display the processed image
+    st.image(img, channels="BGR")
 
-    # If the '캡쳐하기' button is clicked, save the current frame
-    if capture_button:
-        cv2.imwrite('captured_image.jpg', img)
-        with open('captured_image.jpg', "rb") as img_file:
+    # Add a download link for the processed image
+    if st.button("이미지 다운로드"):
+        # Save the processed image to a file
+        cv2.imwrite('processed_image.jpg', img)
+        with open('processed_image.jpg', "rb") as img_file:
             img_bytes = img_file.read()
         b64_img = base64.b64encode(img_bytes).decode()
-        img_href = f'<a href="data:image/jpg;base64,{b64_img}" download="captured_image.jpg">다운로드</a>'
-        download_placeholder.markdown(img_href, unsafe_allow_html=True)
-
-cap.release()
-cv2.destroyAllWindows()
+        img_href = f'<a href="data:image/jpg;base64,{b64_img}" download="processed_image.jpg">다운로드</a>'
+        st.markdown(img_href, unsafe_allow_html=True)
