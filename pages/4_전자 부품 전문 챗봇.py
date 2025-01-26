@@ -77,6 +77,9 @@ if 'generated' not in st.session_state:
 if 'past' not in st.session_state:
     st.session_state['past'] = []
 
+if 'audio_submitted' not in st.session_state:
+    st.session_state['audio_submitted'] = False
+
 if st.button('기존 채팅 삭제'):
     st.session_state['generated'] = []
     st.session_state['past'] = []
@@ -93,17 +96,21 @@ with st.form('form', clear_on_submit=True):
     submitted = st.form_submit_button('Send')
 
 # 음성 입력 처리
-st.audio_input("음성 메시지를 녹음하여 질문하세요.", key="audio_input")
-if st.session_state.get("audio_input"):
-    user_input = process_audio_input(st.session_state["audio_input"])
+audio_input = st.audio_input("음성 메시지를 녹음하여 질문하세요.")
+if audio_input and not st.session_state['audio_submitted']:
+    user_input = process_audio_input(audio_input)
+    st.session_state['audio_submitted'] = True
 
-if submitted and user_input:
+if user_input:
     # 프롬프트 생성 후 챗봇의 답변 생성
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
 
     st.session_state['past'].append(user_input)
     st.session_state["generated"].append(chatbot_response)
+
+    # 음성 입력 완료 상태 초기화
+    st.session_state['audio_submitted'] = False
 
 if st.session_state['generated']:
     for i in reversed(range(len(st.session_state['generated']))):
