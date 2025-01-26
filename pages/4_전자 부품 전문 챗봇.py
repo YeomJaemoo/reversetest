@@ -69,7 +69,7 @@ def save_and_download_chat(past, generated):
 
 # Streamlit UI 구성
 st.image('images/ask_me_chatbot3.png')
-st.title("\ud83d\udd7fMeasure :red[Electronic Component Helper]")
+st.title("Measure :red[Electronic Component Helper]")
 
 if 'generated' not in st.session_state:
     st.session_state['generated'] = []
@@ -87,7 +87,7 @@ example = {
 }
 
 with st.form('form', clear_on_submit=True):
-    user_input = st.text_input('\ud83d\ude0e전자 부품이 해당 기기에서의 역할은?',
+    user_input = st.text_input('🤩전자 부품이 해당 기기에서의 역할은?',
                                value=example["prompt"] if autocomplete else "",
                                key='input')
     submitted = st.form_submit_button('Send')
