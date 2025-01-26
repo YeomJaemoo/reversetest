@@ -81,8 +81,8 @@ if 'audio_submitted' not in st.session_state:
     st.session_state['audio_submitted'] = False
 
 if st.button('기존 채팅 삭제'):
-    st.session_state['generated'] = []
-    st.session_state['past'] = []
+    st.session_state['generated'].clear()
+    st.session_state['past'].clear()
 
 autocomplete = st.checkbox("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
