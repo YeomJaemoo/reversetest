@@ -109,14 +109,17 @@ if submitted and user_input:
 
 # 2. 텍스트 질문이 없을 경우에만 음성 질문 처리
 elif st.session_state['audio_questions']:
-    # 음성 녹음이 여러 번 들어왔다면, while문으로 큐처럼 하나씩 꺼내 처리
-    while st.session_state['audio_questions']:
-        question = st.session_state['audio_questions'].pop(0)  # 음성 질문 꺼내기
+    # 음성 녹음이 여러 번 들어왔다면, 순서대로 전부 처리
+    # 필요에 따라 한 개만 처리하고 싶으면 for문 대신 한 개만 pop해서 쓰면 됨
+    for question in st.session_state['audio_questions']:
         prompt = create_prompt(question)
         chatbot_response = generate_response(prompt)
 
         st.session_state['past'].append(question)
         st.session_state["generated"].append(chatbot_response)
+
+    # 처리 후 음성 질문 리스트 초기화
+    st.session_state['audio_questions'].clear()
 
 
 # ---------------- 채팅 메시지 출력(과거순서 역순으로) ------------------
