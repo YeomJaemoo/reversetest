@@ -61,8 +61,8 @@ if st.button('기존 체팅 삭제'):
 
 # ---------------- 사이드바: 음성 녹음 UI ------------------
 with st.sidebar:
-    st.header("음성 질문 (사이드바)")
-    audio_data = st.audio_input("질문 내용을 녹음해 보세요.")
+    st.header("▶️누르고 질문 후 ⏹️누르기")
+    audio_data = st.audio_input("질문 내용을 음성으로 보내세요.")
     if audio_data is not None:
         with st.spinner("음성을 인식하는 중..."):
             recognizer = sr.Recognizer()
