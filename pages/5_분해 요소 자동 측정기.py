@@ -10,6 +10,10 @@ st.set_page_config(
     page_icon="📏"
 )
 
+# OpenCV 버전 확인
+opencv_version = cv2.__version__
+st.write(f"현재 OpenCV 버전: {opencv_version}")
+
 # ArUco 모듈 로드
 try:
     import cv2.aruco as aruco
@@ -17,9 +21,14 @@ except ImportError:
     st.error("OpenCV에서 ArUco 모듈을 사용할 수 없습니다. 'opencv-contrib-python'이 설치되어 있는지 확인하세요.")
     st.stop()
 
-# ArUco 탐지기 설정
-parameters = aruco.DetectorParameters()
-aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_50)
+# OpenCV 4.7 이상에서는 ArUco 탐지기를 새롭게 설정해야 함
+if int(opencv_version.split('.')[1]) >= 7:
+    aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_50)
+    parameters = aruco.DetectorParameters()
+    aruco_detector = aruco.ArucoDetector(aruco_dict, parameters)
+else:
+    aruco_dict = aruco.Dictionary_get(aruco.DICT_5X5_50)
+    parameters = aruco.DetectorParameters_create()
 
 # 객체 탐지기 로드
 detector = HomogeneousBgDetector()
@@ -38,7 +47,11 @@ if camera_input is not None:
     img = cv2.imdecode(file_bytes, 1)
 
     # ArUco 마커 탐지
-    corners, _, _ = aruco.detectMarkers(img, aruco_dict, parameters=parameters)
+    if int(opencv_version.split('.')[1]) >= 7:
+        corners, ids, rejected = aruco_detector.detectMarkers(img)
+    else:
+        corners, ids, rejected = aruco.detectMarkers(img, aruco_dict, parameters=parameters)
+
     if corners:
         # 마커 주위에 다각형 그리기
         int_corners = np.int0(corners)
