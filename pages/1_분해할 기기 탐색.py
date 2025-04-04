@@ -12,7 +12,7 @@ st.subheader("🔎아래의 검색창에 분해할 기기의 명칭을 넣어 �
 st.divider()
 
 # API 키 입력
-api_key=st.secrets['YOUTUBE_API_KEY']
+api_key = st.secrets['YOUTUBE_API_KEY']
 
 youtube = build('youtube', 'v3', developerKey=api_key)
 
@@ -28,8 +28,12 @@ def get_data_from_youtube(word):
     thumbnails = []
 
     for search_result in search_response.get('items', []):
+        video_id = search_result.get('id', {}).get('videoId')
+        if not video_id:
+            continue  # videoId가 없는 경우는 건너뜀
+
         titles.append(search_result['snippet']['title'])
-        urls.append(f"https://www.youtube.com/watch?v={search_result['id']['videoId']}")
+        urls.append(f"https://www.youtube.com/watch?v={video_id}")
         thumbnails.append(search_result['snippet']['thumbnails']['default']['url'])
 
     df = pd.DataFrame({
