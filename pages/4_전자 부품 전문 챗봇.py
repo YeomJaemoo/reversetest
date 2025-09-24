@@ -3,7 +3,6 @@ import streamlit as st
 from streamlit_chat import message
 import os
 import base64
-
 import speech_recognition as sr
 import tempfile
 
@@ -41,20 +40,23 @@ def generate_response(messages):
 
 st.image('images/ask_me_chatbot3.png')
 
-# 기존 세션 상태 유지
 if 'generated' not in st.session_state:
     st.session_state['generated'] = []
 if 'past' not in st.session_state:
     st.session_state['past'] = []
 if 'audio_questions' not in st.session_state:
     st.session_state['audio_questions'] = []
+if 'autocomplete_last' not in st.session_state:
+    st.session_state['autocomplete_last'] = None
+if 'input' not in st.session_state:
+    st.session_state['input'] = ""
 
 # 채팅 삭제 시 모든 기록 초기화
 if st.button('기존 체팅 삭제'):
     st.session_state['generated'] = []
     st.session_state['past'] = []
     st.session_state['audio_questions'] = []
-    st.session_state['input'] = ""  # 입력창까지 완전 초기화
+    st.session_state['input'] = ""
 
 # ---------------- 사이드바: 음성 녹음 UI ------------------
 with st.sidebar:
@@ -77,21 +79,19 @@ with st.sidebar:
                 st.warning("서버 문제로 음성을 인식할 수 없습니다.")
 
 # 예시 프롬프트 사용 여부
-autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
     "prompt": "핸드폰에서 메인보드가 하는 역할을 100자 내외로 말해줘!"
 }
+autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?", value=st.session_state.get("autocomplete_last", False))
 
-# ------- 입력창 예시문 동기화(핵심) ---------
-# 토글이 바뀔 때마다 session_state['input']에 값을 세팅
-if autocomplete:
-    # 토글을 켰을 때만 예시문 반영 (사용자가 직접 입력한 내용은 덮어씀)
-    if st.session_state.get('input', "") != example["prompt"]:
-        st.session_state['input'] = example["prompt"]
-else:
-    # 토글을 끄면 입력창을 비움 (이미 비었으면 변화 없음)
-    if st.session_state.get('input', "") != "":
-        st.session_state['input'] = ""
+# 🔥 핵심: 토글 변화 감지 후 입력창 즉시 동기화 및 리렌더링
+if st.session_state.get("autocomplete_last", False) != autocomplete:
+    st.session_state["autocomplete_last"] = autocomplete
+    if autocomplete:
+        st.session_state["input"] = example["prompt"]
+    else:
+        st.session_state["input"] = ""
+    st.experimental_rerun()  # 즉시 반영
 
 # ---------------- 메인 영역: 텍스트 질문 입력 폼 ------------------
 with st.form('form', clear_on_submit=True):
@@ -102,7 +102,6 @@ with st.form('form', clear_on_submit=True):
     submitted = st.form_submit_button('Send')
 
 # ---------------- 질문 처리 로직 ------------------
-
 if submitted and user_input:
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
