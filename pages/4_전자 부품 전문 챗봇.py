@@ -80,6 +80,7 @@ with st.sidebar:
             except sr.RequestError:
                 st.warning("서버 문제로 음성을 인식할 수 없습니다.")
 
+
 # 예시 프롬프트 사용 여부
 autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
@@ -87,15 +88,10 @@ example = {
 }
 
 # ---------------- 메인 영역: 텍스트 질문 입력 폼 ------------------
-# ✅ 토글이 켜지면 세션 상태에 예시문 저장
-if autocomplete and "input" not in st.session_state:
-    st.session_state["input"] = example["prompt"]
-
 with st.form('form', clear_on_submit=True):
-    user_input = st.text_input(
-        '😎전자 부품이 해당 기기에서의 역할은?',
-        key='input'
-    )
+    user_input = st.text_input('😎전자 부품이 해당 기기에서의 역할은?',
+                               value=example["prompt"] if autocomplete else "",
+                               key='input')
     submitted = st.form_submit_button('Send')
 
 # ---------------- 질문 처리 로직 ------------------
@@ -113,6 +109,8 @@ if submitted and user_input:
 
 # 2. 텍스트 질문이 없을 경우에만 음성 질문 처리
 elif st.session_state['audio_questions']:
+    # 음성 녹음이 여러 번 들어왔다면, 순서대로 전부 처리
+    # 필요에 따라 한 개만 처리하고 싶으면 for문 대신 한 개만 pop해서 쓰면 됨
     for question in st.session_state['audio_questions']:
         prompt = create_prompt(question)
         chatbot_response = generate_response(prompt)
@@ -122,6 +120,7 @@ elif st.session_state['audio_questions']:
 
     # 처리 후 음성 질문 리스트 초기화
     st.session_state['audio_questions'].clear()
+
 
 # ---------------- 채팅 메시지 출력(과거순서 역순으로) ------------------
 if st.session_state['generated']:
