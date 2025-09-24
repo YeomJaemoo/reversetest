@@ -49,15 +49,19 @@ if 'generated' not in st.session_state:
 if 'past' not in st.session_state:
     st.session_state['past'] = []
 
-# 음성 입력을 받은 질문을 임시로 보관할 리스트
 if 'audio_questions' not in st.session_state:
     st.session_state['audio_questions'] = []
+
+# 입력 위젯의 상태를 관리하기 위해 'input' 키 초기화
+if 'input' not in st.session_state:
+    st.session_state.input = ""
 
 # 채팅 삭제 시 모든 기록 초기화 (텍스트 + 음성질문 리스트)
 if st.button('기존 체팅 삭제'):
     st.session_state['generated'] = []
     st.session_state['past'] = []
     st.session_state['audio_questions'] = []
+    st.session_state.input = "" # 입력창도 함께 비웁니다.
 
 # ---------------- 사이드바: 음성 녹음 UI ------------------
 with st.sidebar:
@@ -87,11 +91,22 @@ example = {
     "prompt": "핸드폰에서 메인보드가 하는 역할을 100자 내외로 말해줘!"
 }
 
+# --- ✨ 수정된 부분 시작 ✨ ---
+# 토글 상태에 따라 session_state 값을 직접 업데이트합니다.
+if autocomplete:
+    st.session_state.input = example["prompt"]
+else:
+    # 토글을 끌 때, 현재 입력된 내용이 예시와 같다면 비워줍니다.
+    # 이를 통해 사용자가 직접 수정한 내용은 유지할 수 있습니다.
+    if st.session_state.input == example["prompt"]:
+        st.session_state.input = ""
+# --- ✨ 수정된 부분 끝 ✨ ---
+
+
 # ---------------- 메인 영역: 텍스트 질문 입력 폼 ------------------
 with st.form('form', clear_on_submit=True):
-    user_input = st.text_input('😎전자 부품이 해당 기기에서의 역할은?',
-                               value=example["prompt"] if autocomplete else "",
-                               key='input')
+    # value 인자를 제거하고, key를 통해 session_state와 동기화합니다.
+    user_input = st.text_input('😎전자 부품이 해당 기기에서의 역할은?', key='input')
     submitted = st.form_submit_button('Send')
 
 # ---------------- 질문 처리 로직 ------------------
@@ -106,11 +121,13 @@ if submitted and user_input:
     # 채팅 세션 업데이트
     st.session_state['past'].append(user_input)
     st.session_state["generated"].append(chatbot_response)
+    
+    # 제출 후 입력창의 session_state를 비웁니다.
+    st.session_state.input = ""
 
 # 2. 텍스트 질문이 없을 경우에만 음성 질문 처리
 elif st.session_state['audio_questions']:
     # 음성 녹음이 여러 번 들어왔다면, 순서대로 전부 처리
-    # 필요에 따라 한 개만 처리하고 싶으면 for문 대신 한 개만 pop해서 쓰면 됨
     for question in st.session_state['audio_questions']:
         prompt = create_prompt(question)
         chatbot_response = generate_response(prompt)
