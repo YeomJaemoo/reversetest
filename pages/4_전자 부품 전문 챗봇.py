@@ -21,7 +21,6 @@ def create_prompt(
     stream=True
 ):
     user_content = f"""User question: "{str(query)}". """
-
     messages = [
         {"role": "system", "content": system_role},
         {"role": "user", "content": user_content}
@@ -84,14 +83,14 @@ example = {
 }
 autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?", value=st.session_state.get("autocomplete_last", False))
 
-# 🔥 핵심: 토글 변화 감지 후 입력창 즉시 동기화 및 리렌더링
+# rerun 로직은 입력창 생성 전!
 if st.session_state.get("autocomplete_last", False) != autocomplete:
     st.session_state["autocomplete_last"] = autocomplete
     if autocomplete:
         st.session_state["input"] = example["prompt"]
     else:
         st.session_state["input"] = ""
-    st.experimental_rerun()  # 즉시 반영
+    st.experimental_rerun()  # rerun은 여기까지만 허용
 
 # ---------------- 메인 영역: 텍스트 질문 입력 폼 ------------------
 with st.form('form', clear_on_submit=True):
