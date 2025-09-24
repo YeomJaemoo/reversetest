@@ -38,17 +38,16 @@ def generate_response(messages):
 
 st.image('images/ask_me_chatbot3.png')
 
-# 세션 상태 유지
 if 'generated' not in st.session_state:
     st.session_state['generated'] = []
 if 'past' not in st.session_state:
     st.session_state['past'] = []
 if 'audio_questions' not in st.session_state:
     st.session_state['audio_questions'] = []
-if 'autocomplete_last' not in st.session_state:
-    st.session_state['autocomplete_last'] = None
 if 'input' not in st.session_state:
     st.session_state['input'] = ""
+if 'autocomplete' not in st.session_state:
+    st.session_state['autocomplete'] = False
 
 # 채팅 삭제 시 모든 기록 초기화
 if st.button('기존 체팅 삭제'):
@@ -56,6 +55,7 @@ if st.button('기존 체팅 삭제'):
     st.session_state['past'] = []
     st.session_state['audio_questions'] = []
     st.session_state['input'] = ""
+    st.session_state['autocomplete'] = False
 
 # ----- 사이드바: 음성 녹음 -----
 with st.sidebar:
@@ -81,16 +81,21 @@ with st.sidebar:
 example = {
     "prompt": "핸드폰에서 메인보드가 하는 역할을 100자 내외로 말해줘!"
 }
-autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?", value=st.session_state.get("autocomplete_last", False))
 
-# rerun: 입력창 생성 전
-if st.session_state.get("autocomplete_last", False) != autocomplete:
-    st.session_state["autocomplete_last"] = autocomplete
-    if autocomplete:
-        st.session_state["input"] = example["prompt"]
-    else:
-        st.session_state["input"] = ""
-    st.experimental_rerun()
+# 토글이 바뀌면 session_state의 값만 변경
+autocomplete = st.toggle(
+    "예시로 채우기를 통해 프롬프트 잘 활용해볼까?",
+    value=st.session_state['autocomplete'],
+    key='autocomplete'
+)
+if autocomplete:
+    # 토글이 켜져있고 입력창이 비어있으면 예시문 삽입
+    if st.session_state['input'] == "":
+        st.session_state['input'] = example["prompt"]
+else:
+    # 토글이 꺼지면 입력창 비움
+    if st.session_state['input'] == example["prompt"]:
+        st.session_state['input'] = ""
 
 # ----- 텍스트 질문 입력 폼 -----
 with st.form('form', clear_on_submit=True):
