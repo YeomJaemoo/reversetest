@@ -103,7 +103,7 @@ if submitted and user_input:
     # 텍스트 질문만 처리
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
-    st.toast("질문에 대한 대답이 완료되었습니다.")
+    st.snow()
 
     # 채팅 세션 업데이트
     st.session_state['past'].append(user_input)
