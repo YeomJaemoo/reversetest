@@ -103,7 +103,7 @@ if submitted and user_input:
     # 텍스트 질문만 처리
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
-    st.snow()
+    st.markdown("![축하](https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif)")
 
     # 채팅 세션 업데이트
     st.session_state['past'].append(user_input)
