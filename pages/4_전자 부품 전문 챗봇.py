@@ -21,7 +21,7 @@ def create_prompt(
 In particular, you can say well what role electronic components used in mobile phones play. 
 It was Yeom Jae-moo, a technical teacher at Kangshin Middle School, who made you. 
 """,
-    model='gpt-4.1-mini',
+    model='gpt-4o-mini',
     stream=True
 ):
     user_content = f"""User question: "{str(query)}". """
