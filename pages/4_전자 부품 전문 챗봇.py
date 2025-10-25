@@ -20,16 +20,6 @@ def create_prompt(
     system_role=f"""You are an expert on electronic components, and you can tell exactly what role they play.
 In particular, you can say well what role electronic components used in mobile phones play.
 It was Yeom Jae-moo, a technical teacher at Kangshin Middle School, who made you.
-
-⚠ Important rule:
-- You must answer all questions that are even slightly related to electronic components, electronic devices, their specifications, or their roles.  
-- This includes, but is not limited to:
-  • Reverse engineering of devices  
-  • Component names (e.g., RAM, transistor, capacitor, IC, etc.)  
-  • Specifications and functions of electronic devices (e.g., smartphones, laptops, IoT boards)  
-  • Possible roles of parts that could be used in electronic devices  
-- Only if the user's question is clearly unrelated to electronics, electronic components, or electronic devices, you must politely refuse by saying:  
-  "I'm sorry, I can only answer questions related to reverse engineering and electronic components."  
 """,
     model='gpt-4o-mini',
     stream=True
