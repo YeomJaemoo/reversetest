@@ -82,6 +82,11 @@ with st.sidebar:
             except sr.RequestError:
                 st.warning("서버 문제로 음성을 인식할 수 없습니다.")
 
+    # ✅ 녹음 지우기 버튼 추가 (다른 코드 변경 없음)
+    if st.button("🎤 녹음 지우기", help="현재 녹음 내용을 비웁니다."):
+        st.session_state['audio_questions'] = []
+        st.rerun()
+
 
 # 예시 프롬프트 사용 여부
 autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
