@@ -7,6 +7,7 @@ import base64
 # 음성 인식을 위한 추가 라이브러리
 import speech_recognition as sr
 import tempfile
+import hashlib
 
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
@@ -44,7 +45,7 @@ def generate_response(messages):
 
 st.image('images/ask_me_chatbot3.png')
 
-# 기존 세션 상태 유지
+# ---------------- 세션 상태 ------------------
 if 'generated' not in st.session_state:
     st.session_state['generated'] = []
 
@@ -55,40 +56,68 @@ if 'past' not in st.session_state:
 if 'audio_questions' not in st.session_state:
     st.session_state['audio_questions'] = []
 
-# 채팅 삭제 시 모든 기록 초기화 (텍스트 + 음성질문 리스트)
+# 오디오 위젯 초기화용 키(녹음 지우기 시 재생성)
+if 'audio_key' not in st.session_state:
+    st.session_state['audio_key'] = 0
+
+# 같은 녹음이 매 rerun마다 중복 처리되는 것을 방지하기 위한 해시
+if 'last_audio_hash' not in st.session_state:
+    st.session_state['last_audio_hash'] = None
+
+# 채팅 삭제 시 모든 기록 초기화 (텍스트 + 음성질문 리스트 + 오디오 위젯)
 if st.button('기존 체팅 삭제'):
     st.session_state['generated'] = []
     st.session_state['past'] = []
     st.session_state['audio_questions'] = []
+    st.session_state['last_audio_hash'] = None
+    st.session_state['audio_key'] += 1  # 오디오 입력 위젯 리셋
+    st.rerun()
 
 # ---------------- 사이드바: 음성 녹음 UI ------------------
 with st.sidebar:
     st.header("🎙️누르고 질문 후 ⏹️누르기")
-    audio_data = st.audio_input("질문 내용을 음성으로 보내세요.")
-    if audio_data is not None:
-        with st.spinner("음성을 인식하는 중..."):
-            recognizer = sr.Recognizer()
-            try:
-                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-                    tmp.write(audio_data.getvalue())
-                    with sr.AudioFile(tmp.name) as source:
-                        audio = recognizer.record(source)
-                        recognized_text = recognizer.recognize_google(audio, language="ko-KR")
-                st.success(f"인식된 음성: {recognized_text}")
-                # 인식된 텍스트를 세션상 리스트에 저장(후처리)
-                st.session_state['audio_questions'].append(recognized_text)
-            except sr.UnknownValueError:
-                st.warning("음성을 인식할 수 없었습니다.")
-            except sr.RequestError:
-                st.warning("서버 문제로 음성을 인식할 수 없습니다.")
+    audio_data = st.audio_input("질문 내용을 음성으로 보내세요.", key=f"audio_{st.session_state['audio_key']}")
 
-    # ✅ 녹음 지우기 버튼 추가 (다른 코드 변경 없음)
+    # ✅ 녹음 지우기 버튼: 리스트 비우고 오디오 위젯 자체를 재생성
     if st.button("🎤 녹음 지우기", help="현재 녹음 내용을 비웁니다."):
         st.session_state['audio_questions'] = []
+        st.session_state['last_audio_hash'] = None
+        st.session_state['audio_key'] += 1  # 오디오 입력 위젯 리셋
         st.rerun()
 
+    if audio_data is not None:
+        # 동일한 오디오가 rerun마다 반복 처리되는 것을 방지
+        audio_bytes = audio_data.getvalue()
+        audio_hash = hashlib.md5(audio_bytes).hexdigest()
+        if audio_hash != st.session_state['last_audio_hash']:
+            with st.spinner("음성을 인식하는 중..."):
+                recognizer = sr.Recognizer()
+                tmp_path = None
+                try:
+                    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                        tmp.write(audio_bytes)
+                        tmp_path = tmp.name
+                    with sr.AudioFile(tmp_path) as source:
+                        audio = recognizer.record(source)
+                        recognized_text = recognizer.recognize_google(audio, language="ko-KR")
+                    st.success(f"인식된 음성: {recognized_text}")
+                    # 인식된 텍스트를 세션상 리스트에 저장(후처리)
+                    st.session_state['audio_questions'].append(recognized_text)
+                    st.session_state['last_audio_hash'] = audio_hash
+                except sr.UnknownValueError:
+                    st.warning("음성을 인식할 수 없었습니다.")
+                except sr.RequestError:
+                    st.warning("서버 문제로 음성을 인식할 수 없습니다.")
+                except OSError:
+                    st.warning("오디오 파일 처리에 문제가 발생했습니다.")
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        try:
+                            os.remove(tmp_path)
+                        except Exception:
+                            pass
 
-# 예시 프롬프트 사용 여부
+# 예시 프롬프트 사용 여부 (제출 전에는 아무 동작 없음: 단지 입력창 기본값만 바꿉니다)
 autocomplete = st.toggle("예시로 채우기를 통해 프롬프트 잘 활용해볼까?")
 example = {
     "prompt": "핸드폰에서 메인보드가 하는 역할을 100자 내외로 말해줘!"
@@ -96,28 +125,25 @@ example = {
 
 # ---------------- 메인 영역: 텍스트 질문 입력 폼 ------------------
 with st.form('form', clear_on_submit=True):
-    user_input = st.text_input('😎전자 부품이 해당 기기에서의 역할은?',
-                               value=example["prompt"] if autocomplete else "",
-                               key='input')
+    user_input = st.text_input(
+        '😎전자 부품이 해당 기기에서의 역할은?',
+        value=example["prompt"] if autocomplete else "",
+        key='input'
+    )
     submitted = st.form_submit_button('Send')
 
-# ---------------- 질문 처리 로직 ------------------
-
-# 1. 텍스트 질문이 우선순위를 가짐
+# ---------------- 질문 처리 로직 (텍스트 우선, 음성은 보조) ------------------
+# 1) 텍스트 제출이 있으면 텍스트만 처리 (우선순위)
 if submitted and user_input:
-    # 텍스트 질문만 처리
     prompt = create_prompt(user_input)
     chatbot_response = generate_response(prompt)
     st.balloons()
 
-    # 채팅 세션 업데이트
     st.session_state['past'].append(user_input)
     st.session_state["generated"].append(chatbot_response)
 
-# 2. 텍스트 질문이 없을 경우에만 음성 질문 처리
+# 2) 텍스트 제출이 없고, 대기 중인 음성질문이 있으면 음성질문 전부 처리
 elif st.session_state['audio_questions']:
-    # 음성 녹음이 여러 번 들어왔다면, 순서대로 전부 처리
-    # 필요에 따라 한 개만 처리하고 싶으면 for문 대신 한 개만 pop해서 쓰면 됨
     for question in st.session_state['audio_questions']:
         prompt = create_prompt(question)
         chatbot_response = generate_response(prompt)
@@ -125,9 +151,8 @@ elif st.session_state['audio_questions']:
         st.session_state['past'].append(question)
         st.session_state["generated"].append(chatbot_response)
 
-    # 처리 후 음성 질문 리스트 초기화
+    # 처리 후 음성 질문 리스트 초기화(중복 방지)
     st.session_state['audio_questions'].clear()
-
 
 # ---------------- 채팅 메시지 출력(과거순서 역순으로) ------------------
 if st.session_state['generated']:
